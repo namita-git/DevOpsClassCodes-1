@@ -1,55 +1,38 @@
-#!/usr/bin/env groovy
-def gv
 pipeline {
-    agent none
+    agent any
 
     tools {
         // Install the Maven version configured as "M3" and add it to the path.
-        jdk 'myjava'
-        maven 'mymaven'
+        maven "mymaven"
+        jdk "myjava"
     }
 
     stages {
         stage('Compile') {
-            agent any
             steps {
-                script{
-                    git 'https://github.com/devops-trainer/DevOpsClassCodes.git'
-                   gv = load "script.groovy"
-                    gv.compile()
-                }
-                
+                sh "mvn compile"
             }
         }
-        stage('UnitTest') {
-           
-            agent any
+
+    stage('CodeReview') {
             steps {
-               script{
-                  gv = load "script.groovy"
-                   gv.UnitTest()
-               }
-                
+                sh "mvn pmd:pmd"
             }
-           
         }
-        stage('Package') {
-            agent any
+    stage('UnitTest') {
             steps {
-                script{
-                      gv = load "script.groovy"
-                    gv.package()
-                }
-                
+                sh "mvn test"
             }
-         
         }
-        stage('Build docker image'){
-            agent any
-            steps{
-                script{
-                    
+    stage('MetricCheck') {
+            steps {
+                sh "mvn cobertura:cobertura -Dcobertura.report.format=xml"
+            }
+        }
+    stage('Package') {
+            steps {
+                sh "mvn package"
+            }
+        }
     }
 }
-        }
-    }
